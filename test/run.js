@@ -80,7 +80,8 @@ if (process.env.verbose) {
 }
 
 far.add(__dirname);
-far.include(/test-.*\.js$/);
+// SEAL_TEST_FILTER lets CI scope the run via the `test-filter` dispatch input.
+far.include(new RegExp(process.env.SEAL_TEST_FILTER || 'test-.*\\.js$'));
 
 // start static server for all tests
 static(function() {

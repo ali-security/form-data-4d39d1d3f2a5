@@ -1,14 +1,38 @@
 name: 'Tests: node.js < 10'
 
-on: [pull_request, push]
+on:
+  workflow_dispatch:
+    inputs:
+      test-filter:
+        description: 'Optional test filter to scope the run'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   tests:
-    uses: ljharb/actions/.github/workflows/node.yml@main
-    with:
-      range: '>= 6 < 10'
-      type: minors
-      command: npm run ci-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the Node 6 suite inside a node:6 container
+        env:
+          SEAL_TEST_FILTER: ${{ inputs.test-filter }}
+        run: |
+          docker run --rm -v "$PWD":/src -w /src -e SEAL_TEST_FILTER node:6 bash -c '
+            set -e
+            rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm
+            cd /usr/local/lib/node_modules
+            curl -sL https://registry.npmjs.org/npm/-/npm-6.14.15.tgz | tar -xz
+            mv package npm
+            ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
+            cd /src
+            node -v
+            npm -v
+            npm config set registry "https://:2025-02-14T23%3A23%3A57.699Z@time-machines-npm.sealsecurity.io/"
+            npm install --no-audit --no-fund
+            if [ -n "$SEAL_TEST_FILTER" ]; then npm run tests-only; else npm run ci-test; fi
+          '

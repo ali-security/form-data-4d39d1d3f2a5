@@ -1,6 +1,6 @@
 name: 'Tests: pretest/posttest'
 
-on: [pull_request, push]
+on: workflow_dispatch
 
 permissions:
   contents: read
